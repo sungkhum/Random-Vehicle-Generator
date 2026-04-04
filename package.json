@@ -1,0 +1,10 @@
+{
+  "name": "random-vehicle-generator",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Filterable random vehicle generator built from open vehicle datasets.",
+  "scripts": {
+    "build:data": "python3 scripts/build_vehicle_dataset.py",
+    "start": "python3 -m http.server 4173"
+  }
+}

@@ -1,0 +1,459 @@
+:root {
+  --bg: #10141d;
+  --panel: rgba(12, 18, 31, 0.74);
+  --panel-strong: rgba(16, 24, 41, 0.92);
+  --line: rgba(255, 255, 255, 0.12);
+  --text: #eff3f7;
+  --muted: #a2acba;
+  --accent: #f76d3c;
+  --accent-soft: rgba(247, 109, 60, 0.15);
+  --air: #7fd3ff;
+  --land: #d7d37a;
+  --road: #ffb45d;
+  --rail: #a8ff90;
+  --sea: #87b3ff;
+  --space: #d0abff;
+  --shadow: 0 24px 90px rgba(0, 0, 0, 0.34);
+  --radius: 28px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(127, 211, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 80% 10%, rgba(247, 109, 60, 0.16), transparent 24%),
+    radial-gradient(circle at 70% 80%, rgba(208, 171, 255, 0.16), transparent 24%),
+    linear-gradient(180deg, #0d1118 0%, #10141d 42%, #0c1017 100%);
+  color: var(--text);
+  font-family: "Chakra Petch", sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at center, black 55%, transparent 95%);
+  pointer-events: none;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 35%),
+    linear-gradient(315deg, rgba(255, 255, 255, 0.02), transparent 35%);
+  pointer-events: none;
+}
+
+.shell {
+  width: min(1240px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 40px 0 56px;
+}
+
+.hero {
+  position: relative;
+  padding: 30px 8px 34px;
+}
+
+.eyebrow,
+.panel-kicker {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.panel h2,
+.result-card h3 {
+  margin: 0;
+  font-family: "Instrument Serif", serif;
+  font-weight: 400;
+}
+
+.hero h1 {
+  max-width: 12ch;
+  font-size: clamp(3.2rem, 7vw, 6.7rem);
+  line-height: 0.96;
+  letter-spacing: -0.03em;
+}
+
+.hero-copy {
+  max-width: 62ch;
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 1.04rem;
+  line-height: 1.7;
+}
+
+.hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.stat-pill,
+.chip,
+.source-link,
+.license-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.stat-pill {
+  padding: 10px 14px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 18px;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.controls-panel,
+.result-panel,
+.source-panel {
+  padding: 24px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.panel h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 0.95;
+}
+
+.panel-note {
+  margin: 0;
+  max-width: 20ch;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.control-actions,
+.generator-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+button {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    opacity 140ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button {
+  border-radius: 999px;
+  padding: 13px 18px;
+  letter-spacing: 0.03em;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #f76d3c 0%, #ffa566 100%);
+  color: #170e0a;
+  font-weight: 700;
+}
+
+.secondary-button,
+.ghost-button {
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.secondary-button {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ghost-button {
+  background: transparent;
+}
+
+.category-groups {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.group-card {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    var(--panel-strong);
+}
+
+.group-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.group-heading h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.group-heading span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.category-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 92px;
+  padding: 14px 14px 14px 44px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+}
+
+.category-tile input {
+  position: absolute;
+  left: 14px;
+  top: 17px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.category-tile strong {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.category-tile span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.category-tile:hover,
+.category-tile:has(input:checked) {
+  border-color: rgba(247, 109, 60, 0.45);
+  background: linear-gradient(180deg, var(--accent-soft), rgba(255, 255, 255, 0.03));
+}
+
+.result-card {
+  position: relative;
+  min-height: 380px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(247, 109, 60, 0.15), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(127, 211, 255, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  overflow: hidden;
+}
+
+.result-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -40px -40px auto;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.result-hint {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.result-card h3 {
+  max-width: 14ch;
+  font-size: clamp(2.5rem, 5vw, 4.6rem);
+  line-height: 0.96;
+}
+
+.vehicle-description {
+  max-width: 58ch;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.tag-row,
+.source-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.chip,
+.source-link,
+.license-link {
+  padding: 9px 12px;
+  font-size: 0.82rem;
+}
+
+.chip.air {
+  border-color: rgba(127, 211, 255, 0.45);
+  color: var(--air);
+}
+
+.chip.land {
+  border-color: rgba(215, 211, 122, 0.45);
+  color: var(--land);
+}
+
+.chip.road {
+  border-color: rgba(255, 180, 93, 0.45);
+  color: var(--road);
+}
+
+.chip.rail {
+  border-color: rgba(168, 255, 144, 0.45);
+  color: var(--rail);
+}
+
+.chip.sea {
+  border-color: rgba(135, 179, 255, 0.45);
+  color: var(--sea);
+}
+
+.chip.space {
+  border-color: rgba(208, 171, 255, 0.45);
+  color: var(--space);
+}
+
+.source-panel {
+  margin-top: 18px;
+}
+
+.source-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.source-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.source-card strong {
+  font-size: 1rem;
+}
+
+.source-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+a:hover {
+  border-color: rgba(247, 109, 60, 0.45);
+  color: var(--text);
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-head {
+    flex-direction: column;
+  }
+
+  .panel-note {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    width: min(100% - 20px, 100%);
+    padding-top: 24px;
+  }
+
+  .controls-panel,
+  .result-panel,
+  .source-panel {
+    padding: 18px;
+  }
+
+  .checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .result-card {
+    min-height: 320px;
+    padding: 18px;
+  }
+}

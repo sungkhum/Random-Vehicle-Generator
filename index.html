@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vehicle Roulette</title>
+    <meta
+      name="description"
+      content="Filter open-source vehicle datasets and roll a random fighter jet, tank, MRAP, supercar, submarine, sailboat, train, and more."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Open vehicle atlas</p>
+        <h1>Vehicle Roulette</h1>
+        <p class="hero-copy">
+          Roll across air, road, rail, sea, and space. Pick precise categories
+          like fighter jets, attack helicopters, recon vehicles, rocket
+          artillery, tanks, APCs, MRAPs, supercars, submarines, or high-speed
+          trains, then let the catalog surprise you.
+        </p>
+        <div class="hero-stats" id="hero-stats"></div>
+      </section>
+
+      <section class="layout">
+        <aside class="panel controls-panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Filters</p>
+              <h2>Vehicle Categories</h2>
+            </div>
+            <p class="panel-note" id="selection-summary"></p>
+          </div>
+
+          <div class="control-actions">
+            <button id="select-all" class="secondary-button" type="button">
+              Select all
+            </button>
+            <button id="clear-all" class="secondary-button" type="button">
+              Clear all
+            </button>
+          </div>
+
+          <div id="category-groups" class="category-groups"></div>
+        </aside>
+
+        <section class="panel result-panel">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Result</p>
+              <h2>Current Pull</h2>
+            </div>
+            <p class="panel-note" id="pool-summary"></p>
+          </div>
+
+          <div class="result-card" id="result-card">
+            <p class="result-hint">Pick some categories, then spin the hangar.</p>
+            <h3 id="vehicle-name">Ready to roll</h3>
+            <p id="vehicle-description" class="vehicle-description">
+              Your random vehicle will show up here with its matched category
+              tags and source trail.
+            </p>
+            <div id="vehicle-tags" class="tag-row"></div>
+            <div id="vehicle-sources" class="source-row"></div>
+          </div>
+
+          <div class="generator-actions">
+            <button id="generate-button" class="primary-button" type="button">
+              Generate Vehicle
+            </button>
+            <button id="reroll-button" class="ghost-button" type="button">
+              Re-roll
+            </button>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel source-panel">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Dataset</p>
+            <h2>Open Source Inputs</h2>
+          </div>
+          <p class="panel-note">Mixed from Wikidata and Wikipedia vehicle lists.</p>
+        </div>
+        <div id="source-list" class="source-list"></div>
+      </section>
+    </main>
+
+    <script src="./data/vehicles.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
