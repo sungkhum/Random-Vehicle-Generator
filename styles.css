@@ -188,6 +188,10 @@ body::before {
   gap: 12px;
 }
 
+.generator-actions {
+  width: 100%;
+}
+
 button {
   border: 0;
   font: inherit;
@@ -215,6 +219,11 @@ button:hover {
   background: linear-gradient(135deg, #f76d3c 0%, #ffa566 100%);
   color: #170e0a;
   font-weight: 700;
+}
+
+.generator-actions .primary-button {
+  width: 100%;
+  justify-content: center;
 }
 
 .secondary-button,
