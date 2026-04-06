@@ -25,6 +25,7 @@ const vehicleDescription = document.querySelector("#vehicle-description");
 const vehicleTags = document.querySelector("#vehicle-tags");
 const vehicleSources = document.querySelector("#vehicle-sources");
 const resultMedia = document.querySelector("#result-media");
+const vehicleImageOpen = document.querySelector("#vehicle-image-open");
 const vehicleImage = document.querySelector("#vehicle-image");
 const vehicleImageLink = document.querySelector("#vehicle-image-link");
 const sourceList = document.querySelector("#source-list");
@@ -146,12 +147,14 @@ function renderVehicle(vehicle) {
     resultMedia.hidden = false;
     vehicleImage.src = image.thumbnailUrl;
     vehicleImage.alt = `${vehicle.name} image from Wikimedia`;
+    vehicleImageOpen.href = image.originalUrl || image.thumbnailUrl;
     vehicleImageLink.href = image.filePageUrl || image.articleUrl;
     vehicleImageLink.textContent = image.filePageUrl
       ? "Image from Wikimedia Commons"
       : "Image from Wikipedia";
   } else {
     resultMedia.hidden = true;
+    vehicleImageOpen.removeAttribute("href");
     vehicleImage.removeAttribute("src");
     vehicleImage.alt = "";
     vehicleImageLink.removeAttribute("href");
