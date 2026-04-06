@@ -60,7 +60,7 @@ body::before {
 }
 
 .shell {
-  width: min(1240px, calc(100% - 32px));
+  width: min(1680px, calc(100% - 40px));
   margin: 0 auto;
   padding: 40px 0 56px;
 }
@@ -131,8 +131,10 @@ body::before {
 
 .layout {
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(420px, 0.95fr);
+  grid-template-areas: "controls result";
+  align-items: start;
+  gap: 20px;
 }
 
 .panel {
@@ -147,6 +149,14 @@ body::before {
 .result-panel,
 .source-panel {
   padding: 24px;
+}
+
+.controls-panel {
+  grid-area: controls;
+}
+
+.result-panel {
+  grid-area: result;
 }
 
 .panel-head {
@@ -460,6 +470,9 @@ a:hover {
 @media (max-width: 980px) {
   .layout {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "result"
+      "controls";
   }
 
   .panel-head {
@@ -474,8 +487,8 @@ a:hover {
 
 @media (max-width: 640px) {
   .shell {
-    width: min(100% - 20px, 100%);
-    padding-top: 24px;
+    width: min(100% - 16px, 100%);
+    padding-top: 18px;
   }
 
   .controls-panel,
@@ -491,5 +504,46 @@ a:hover {
   .result-card {
     min-height: 320px;
     padding: 18px;
+  }
+
+  .hero {
+    padding: 18px 6px 22px;
+  }
+
+  .hero-copy {
+    font-size: 0.98rem;
+    line-height: 1.6;
+  }
+
+  .hero-stats,
+  .control-actions,
+  .generator-actions {
+    gap: 10px;
+  }
+
+  .vehicle-image {
+    max-height: 220px;
+  }
+
+  .image-credit {
+    right: 10px;
+    bottom: 10px;
+    padding: 7px 10px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (min-width: 1500px) {
+  .shell {
+    width: min(1840px, calc(100% - 56px));
+  }
+
+  .layout {
+    grid-template-columns: minmax(0, 1.3fr) minmax(500px, 1fr);
+    gap: 24px;
+  }
+
+  .hero-copy {
+    max-width: 70ch;
   }
 }
