@@ -27,12 +27,14 @@ const vehicleSources = document.querySelector("#vehicle-sources");
 const resultMedia = document.querySelector("#result-media");
 const vehicleImageOpen = document.querySelector("#vehicle-image-open");
 const vehicleImage = document.querySelector("#vehicle-image");
+const vehicleImageSkeleton = document.querySelector("#vehicle-image-skeleton");
 const vehicleImageLink = document.querySelector("#vehicle-image-link");
 const sourceList = document.querySelector("#source-list");
 const resultCard = document.querySelector("#result-card");
 const generateButton = document.querySelector("#generate-button");
 const selectAllButton = document.querySelector("#select-all");
 const clearAllButton = document.querySelector("#clear-all");
+let imageLoadRequest = 0;
 
 function groupedCategories() {
   return groupOrder
@@ -135,6 +137,12 @@ function renderVehicle(vehicle) {
   if (!vehicle) {
     resultCard.dataset.empty = "true";
     resultMedia.hidden = true;
+    resultMedia.dataset.loading = "false";
+    vehicleImageSkeleton.hidden = false;
+    vehicleImageOpen.removeAttribute("href");
+    vehicleImage.removeAttribute("src");
+    vehicleImage.alt = "";
+    vehicleImageLink.removeAttribute("href");
     vehicleName.textContent = "No vehicles found";
     vehicleDescription.textContent =
       "Your current filter combination is empty. Turn some categories back on and try again.";
@@ -145,15 +153,41 @@ function renderVehicle(vehicle) {
   const image = vehicle.image;
   if (image?.thumbnailUrl) {
     resultMedia.hidden = false;
-    vehicleImage.src = image.thumbnailUrl;
+    resultMedia.dataset.loading = "true";
     vehicleImage.alt = `${vehicle.name} image from Wikimedia`;
     vehicleImageOpen.href = image.originalUrl || image.thumbnailUrl;
     vehicleImageLink.href = image.filePageUrl || image.articleUrl;
     vehicleImageLink.textContent = image.filePageUrl
       ? "Image from Wikimedia Commons"
       : "Image from Wikipedia";
+
+    vehicleImage.removeAttribute("src");
+    const loadRequest = ++imageLoadRequest;
+    const preloadImage = new Image();
+    preloadImage.onload = () => {
+      if (loadRequest !== imageLoadRequest) {
+        return;
+      }
+      vehicleImage.src = image.thumbnailUrl;
+      resultMedia.dataset.loading = "false";
+    };
+    preloadImage.onerror = () => {
+      if (loadRequest !== imageLoadRequest) {
+        return;
+      }
+      resultMedia.dataset.loading = "false";
+      resultMedia.hidden = true;
+      vehicleImageOpen.removeAttribute("href");
+      vehicleImageLink.removeAttribute("href");
+      vehicleImage.alt = "";
+      vehicleImageSkeleton.hidden = true;
+    };
+    vehicleImageSkeleton.hidden = false;
+    preloadImage.src = image.thumbnailUrl;
   } else {
     resultMedia.hidden = true;
+    resultMedia.dataset.loading = "false";
+    vehicleImageSkeleton.hidden = false;
     vehicleImageOpen.removeAttribute("href");
     vehicleImage.removeAttribute("src");
     vehicleImage.alt = "";
