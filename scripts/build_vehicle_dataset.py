@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from lxml import html
+from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,6 +28,22 @@ def fetch_json(url: str, accept: str | None = None) -> dict:
 
 def normalize_text(value: str) -> str:
     return " ".join(value.replace("\xa0", " ").split())
+
+
+def normalize_wiki_title(value: str) -> str:
+    return normalize_text(urllib.parse.unquote(value).replace("_", " "))
+
+
+def wikipedia_article_url(title: str) -> str:
+    return "https://en.wikipedia.org/wiki/" + urllib.parse.quote(
+        title.replace(" ", "_")
+    )
+
+
+def commons_file_url(file_name: str) -> str:
+    return "https://commons.wikimedia.org/wiki/" + urllib.parse.quote(
+        file_name.replace(" ", "_")
+    )
 
 
 def wikipedia_root(page: str) -> html.HtmlElement:
@@ -63,6 +80,18 @@ def wikipedia_category_titles(category_title: str) -> list[str]:
     return titles
 
 
+def cell_wiki_title(cell: html.HtmlElement) -> str:
+    for anchor in cell.xpath('.//a[@href]'):
+        href = anchor.get("href", "")
+        if not href.startswith("/wiki/"):
+            continue
+        target = href.removeprefix("/wiki/")
+        if not target or ":" in target:
+            continue
+        return normalize_wiki_title(target)
+    return ""
+
+
 def table_names(
     *,
     page: str,
@@ -82,16 +111,20 @@ def table_names(
     for table_index in indices:
         table = tables[table_index]
         for row in table.xpath(".//tr[position()>1]"):
-            cells = [
-                normalize_text(" ".join(cell.itertext()))
-                for cell in row.xpath("./th|./td")
-            ]
-            if not cells:
+            cell_nodes = row.xpath("./th|./td")
+            cells = [normalize_text(" ".join(cell.itertext())) for cell in cell_nodes]
+            if not cell_nodes:
                 continue
 
             parts = [cells[index] for index in name_parts if index < len(cells)]
             name = normalize_text(" ".join(part for part in parts if part))
             lowered = name.casefold()
+            wiki_title = ""
+            for index in reversed(name_parts):
+                if index < len(cell_nodes):
+                    wiki_title = cell_wiki_title(cell_nodes[index])
+                    if wiki_title:
+                        break
 
             if not name or name in skip_exact:
                 continue
@@ -101,7 +134,10 @@ def table_names(
                 continue
 
             seen.add(lowered)
-            items.append({"name": name})
+            item = {"name": name}
+            if wiki_title:
+                item["wikiTitle"] = wiki_title
+            items.append(item)
 
             if limit and len(items) >= limit:
                 return items
@@ -133,7 +169,7 @@ def category_names(
                 continue
 
             seen.add(lowered)
-            items.append({"name": normalized_name})
+            items.append({"name": normalized_name, "wikiTitle": normalized_name})
 
             if limit and len(items) >= limit:
                 return items
@@ -150,9 +186,14 @@ def wikidata_family_items(
     description_contains_any: tuple[str, ...] = (),
 ) -> list[dict]:
     query = f"""
-SELECT DISTINCT ?item ?itemLabel ?itemDescription WHERE {{
+PREFIX schema: <http://schema.org/>
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?article WHERE {{
   ?item wdt:P31 wd:{model_qid} .
   ?item wdt:P279* wd:{category_qid} .
+  OPTIONAL {{
+    ?article schema:about ?item ;
+      schema:isPartOf <https://en.wikipedia.org/> .
+  }}
   SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en". }}
 }}
 LIMIT {limit}
@@ -187,14 +228,88 @@ LIMIT {limit}
             continue
 
         seen.add(lowered_label)
-        items.append(
-            {
-                "name": label,
-                "description": description,
-            }
-        )
+        item = {
+            "name": label,
+            "description": description,
+        }
+        article = row.get("article", {}).get("value")
+        if article:
+            item["wikiTitle"] = normalize_wiki_title(urlparse(article).path.split("/")[-1])
+        items.append(item)
 
     return items
+
+
+def chunked(items: list[str], size: int) -> list[list[str]]:
+    return [items[index : index + size] for index in range(0, len(items), size)]
+
+
+def fetch_page_images(vehicles: list[dict]) -> None:
+    title_to_records: dict[str, list[dict]] = defaultdict(list)
+    requested_titles: list[str] = []
+    seen_titles: set[str] = set()
+
+    for vehicle in vehicles:
+        lookup_title = vehicle.get("wikiTitle") or vehicle["name"]
+        vehicle["wikiTitle"] = lookup_title
+        lowered = lookup_title.casefold()
+        title_to_records[lowered].append(vehicle)
+        if lowered not in seen_titles:
+            seen_titles.add(lowered)
+            requested_titles.append(lookup_title)
+
+    for batch in chunked(requested_titles, 40):
+        params = {
+            "action": "query",
+            "format": "json",
+            "prop": "pageimages",
+            "piprop": "thumbnail|original|name",
+            "pithumbsize": "900",
+            "redirects": "1",
+            "titles": "|".join(batch),
+        }
+        url = "https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
+            params, safe="|"
+        )
+        payload = fetch_json(url)
+
+        alias_map = {title: title for title in batch}
+        for mapping in payload.get("query", {}).get("normalized", []):
+            alias_map[mapping["from"]] = mapping["to"]
+        for mapping in payload.get("query", {}).get("redirects", []):
+            source = alias_map.get(mapping["from"], mapping["from"])
+            alias_map[mapping["from"]] = mapping["to"]
+            alias_map[source] = mapping["to"]
+
+        pages_by_title = {
+            page.get("title"): page for page in payload.get("query", {}).get("pages", {}).values()
+        }
+
+        for requested_title in batch:
+            resolved_title = alias_map.get(requested_title, requested_title)
+            page = pages_by_title.get(resolved_title)
+            if not page or "missing" in page:
+                continue
+
+            thumbnail = page.get("thumbnail", {}).get("source")
+            original = page.get("original", {}).get("source")
+            image_name = page.get("pageimage")
+            if not thumbnail and not original:
+                continue
+
+            image = {
+                "thumbnailUrl": thumbnail or original,
+                "originalUrl": original or thumbnail,
+                "articleTitle": resolved_title,
+                "articleUrl": wikipedia_article_url(resolved_title),
+            }
+            if image_name:
+                image["fileName"] = image_name
+                image["filePageUrl"] = commons_file_url(f"File:{image_name}")
+
+            for vehicle in title_to_records[requested_title.casefold()]:
+                vehicle["image"] = image
+                vehicle["wikiTitle"] = resolved_title
 
 
 CATEGORIES = [
@@ -622,6 +737,7 @@ def merge_items(categories: list[dict]) -> dict:
                 vehicles[key] = {
                     "name": name,
                     "description": item.get("description", ""),
+                    "wikiTitle": item.get("wikiTitle", ""),
                     "categories": [],
                     "groups": [],
                     "sourceLabels": [],
@@ -631,6 +747,8 @@ def merge_items(categories: list[dict]) -> dict:
             record = vehicles[key]
             if not record["description"] and item.get("description"):
                 record["description"] = item["description"]
+            if not record.get("wikiTitle") and item.get("wikiTitle"):
+                record["wikiTitle"] = item["wikiTitle"]
 
             if category["id"] not in record["categories"]:
                 record["categories"].append(category["id"])
@@ -649,6 +767,7 @@ def merge_items(categories: list[dict]) -> dict:
         vehicles.values(),
         key=lambda item: (item["groups"][0], item["name"].casefold()),
     )
+    fetch_page_images(ordered_vehicles)
 
     category_records = []
     for category in categories:
@@ -682,6 +801,7 @@ def merge_items(categories: list[dict]) -> dict:
         "summary": {
             "vehicleCount": len(ordered_vehicles),
             "categoryCount": len(category_records),
+            "imageCount": sum(1 for vehicle in ordered_vehicles if vehicle.get("image")),
         },
         "licenses": [
             {

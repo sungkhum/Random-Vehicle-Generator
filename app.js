@@ -24,6 +24,9 @@ const vehicleName = document.querySelector("#vehicle-name");
 const vehicleDescription = document.querySelector("#vehicle-description");
 const vehicleTags = document.querySelector("#vehicle-tags");
 const vehicleSources = document.querySelector("#vehicle-sources");
+const resultMedia = document.querySelector("#result-media");
+const vehicleImage = document.querySelector("#vehicle-image");
+const vehicleImageLink = document.querySelector("#vehicle-image-link");
 const sourceList = document.querySelector("#source-list");
 const resultCard = document.querySelector("#result-card");
 const generateButton = document.querySelector("#generate-button");
@@ -68,7 +71,7 @@ function renderHeroStats() {
   const stats = [
     `${data.summary.vehicleCount.toLocaleString()} vehicles`,
     `${data.summary.categoryCount} filter categories`,
-    "Open references from Wikidata + Wikipedia",
+    `${(data.summary.imageCount || 0).toLocaleString()} Wikimedia images`,
   ];
 
   stats.forEach((value) => {
@@ -130,6 +133,7 @@ function renderVehicle(vehicle) {
 
   if (!vehicle) {
     resultCard.dataset.empty = "true";
+    resultMedia.hidden = true;
     vehicleName.textContent = "No vehicles found";
     vehicleDescription.textContent =
       "Your current filter combination is empty. Turn some categories back on and try again.";
@@ -137,6 +141,21 @@ function renderVehicle(vehicle) {
   }
 
   resultCard.dataset.empty = "false";
+  const image = vehicle.image;
+  if (image?.thumbnailUrl) {
+    resultMedia.hidden = false;
+    vehicleImage.src = image.thumbnailUrl;
+    vehicleImage.alt = `${vehicle.name} image from Wikimedia`;
+    vehicleImageLink.href = image.filePageUrl || image.articleUrl;
+    vehicleImageLink.textContent = image.filePageUrl
+      ? "Image from Wikimedia Commons"
+      : "Image from Wikipedia";
+  } else {
+    resultMedia.hidden = true;
+    vehicleImage.removeAttribute("src");
+    vehicleImage.alt = "";
+    vehicleImageLink.removeAttribute("href");
+  }
   vehicleName.textContent = vehicle.name;
   vehicleDescription.textContent =
     vehicle.description || "Pulled from the active filter pool with open-source vehicle references.";
