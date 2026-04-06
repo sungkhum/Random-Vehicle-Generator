@@ -190,6 +190,7 @@ body::before {
 
 .generator-actions {
   width: 100%;
+  margin-top: 18px;
 }
 
 button {
@@ -433,6 +434,10 @@ button:hover {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 18px;
+}
+
+.source-row {
+  margin-top: 14px;
 }
 
 .chip,
