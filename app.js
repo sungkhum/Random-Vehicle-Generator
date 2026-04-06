@@ -27,7 +27,6 @@ const vehicleSources = document.querySelector("#vehicle-sources");
 const sourceList = document.querySelector("#source-list");
 const resultCard = document.querySelector("#result-card");
 const generateButton = document.querySelector("#generate-button");
-const rerollButton = document.querySelector("#reroll-button");
 const selectAllButton = document.querySelector("#select-all");
 const clearAllButton = document.querySelector("#clear-all");
 
@@ -169,7 +168,6 @@ function renderStatus() {
 
   poolSummary.textContent = `${pool.length.toLocaleString()} vehicles in the current pool`;
   generateButton.disabled = pool.length === 0;
-  rerollButton.disabled = pool.length === 0;
 
   if (state.currentVehicle && !pool.includes(state.currentVehicle)) {
     state.currentVehicle = null;
@@ -222,7 +220,6 @@ function generate() {
 }
 
 generateButton.addEventListener("click", generate);
-rerollButton.addEventListener("click", generate);
 
 selectAllButton.addEventListener("click", () => {
   data.categories.forEach((category) => state.selectedCategories.add(category.id));
@@ -239,4 +236,4 @@ clearAllButton.addEventListener("click", () => {
 renderHeroStats();
 renderCategoryFilters();
 renderSources();
-renderStatus();
+generate();
