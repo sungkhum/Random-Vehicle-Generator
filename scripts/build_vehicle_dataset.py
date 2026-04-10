@@ -15,6 +15,52 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 USER_AGENT = "CodexVehicleGenerator/1.0 (https://openai.com)"
+DATE_CLAIM_PROPERTIES = (
+    ("P2031", "work period (start)"),
+    ("P606", "first flight"),
+    ("P729", "service entry"),
+    ("P571", "inception"),
+    ("P580", "start time"),
+    ("P577", "publication date"),
+)
+ERA_BUCKETS = (
+    {
+        "id": "before-1946",
+        "label": "Before 1946",
+        "description": "Early and wartime vehicles",
+        "start": None,
+        "end": 1945,
+    },
+    {
+        "id": "1946-1969",
+        "label": "1946-1969",
+        "description": "Post-war and early jet age",
+        "start": 1946,
+        "end": 1969,
+    },
+    {
+        "id": "1970-1999",
+        "label": "1970-1999",
+        "description": "Late 20th century vehicles",
+        "start": 1970,
+        "end": 1999,
+    },
+    {
+        "id": "2000-and-newer",
+        "label": "2000 and newer",
+        "description": "Contemporary vehicles",
+        "start": 2000,
+        "end": None,
+    },
+    {
+        "id": "unknown-age",
+        "label": "Unknown age",
+        "description": "No reliable year found yet",
+        "start": None,
+        "end": None,
+        "unknown": True,
+    },
+)
 
 
 def fetch_json(url: str, accept: str | None = None) -> dict:
@@ -244,6 +290,43 @@ def chunked(items: list[str], size: int) -> list[list[str]]:
     return [items[index : index + size] for index in range(0, len(items), size)]
 
 
+def extract_claim_year(claim: dict) -> int | None:
+    mainsnak = claim.get("mainsnak", {})
+    datavalue = mainsnak.get("datavalue", {})
+    value = datavalue.get("value")
+    if not isinstance(value, dict):
+        return None
+
+    time_value = value.get("time")
+    precision = value.get("precision", 0)
+    if not isinstance(time_value, str) or precision < 9:
+        return None
+
+    match = re.match(r"([+-])(\d+)-", time_value)
+    if not match:
+        return None
+
+    year = int(match.group(2))
+    if match.group(1) == "-":
+        year *= -1
+    return year
+
+
+def era_for_year(year: int | None) -> dict:
+    if year is None:
+        return next(bucket for bucket in ERA_BUCKETS if bucket.get("unknown"))
+
+    for bucket in ERA_BUCKETS:
+        if bucket.get("unknown"):
+            continue
+        start = bucket["start"]
+        end = bucket["end"]
+        if (start is None or year >= start) and (end is None or year <= end):
+            return bucket
+
+    return next(bucket for bucket in ERA_BUCKETS if bucket.get("unknown"))
+
+
 def fetch_page_images(vehicles: list[dict]) -> None:
     title_to_records: dict[str, list[dict]] = defaultdict(list)
     requested_titles: list[str] = []
@@ -262,7 +345,7 @@ def fetch_page_images(vehicles: list[dict]) -> None:
         params = {
             "action": "query",
             "format": "json",
-            "prop": "pageimages",
+            "prop": "pageimages|pageprops",
             "piprop": "thumbnail|original|name",
             "pithumbsize": "900",
             "redirects": "1",
@@ -294,22 +377,92 @@ def fetch_page_images(vehicles: list[dict]) -> None:
             thumbnail = page.get("thumbnail", {}).get("source")
             original = page.get("original", {}).get("source")
             image_name = page.get("pageimage")
+            wikidata_id = page.get("pageprops", {}).get("wikibase_item")
             if not thumbnail and not original:
-                continue
-
-            image = {
-                "thumbnailUrl": thumbnail or original,
-                "originalUrl": original or thumbnail,
-                "articleTitle": resolved_title,
-                "articleUrl": wikipedia_article_url(resolved_title),
-            }
-            if image_name:
-                image["fileName"] = image_name
-                image["filePageUrl"] = commons_file_url(f"File:{image_name}")
+                image = None
+            else:
+                image = {
+                    "thumbnailUrl": thumbnail or original,
+                    "originalUrl": original or thumbnail,
+                    "articleTitle": resolved_title,
+                    "articleUrl": wikipedia_article_url(resolved_title),
+                }
+                if image_name:
+                    image["fileName"] = image_name
+                    image["filePageUrl"] = commons_file_url(f"File:{image_name}")
 
             for vehicle in title_to_records[requested_title.casefold()]:
-                vehicle["image"] = image
                 vehicle["wikiTitle"] = resolved_title
+                if image:
+                    vehicle["image"] = image
+                if wikidata_id:
+                    vehicle["wikidataId"] = wikidata_id
+
+
+def fetch_vehicle_years(vehicles: list[dict]) -> None:
+    qid_to_records: dict[str, list[dict]] = defaultdict(list)
+    unique_qids: list[str] = []
+    seen_qids: set[str] = set()
+
+    for vehicle in vehicles:
+        qid = vehicle.get("wikidataId")
+        if not qid:
+            continue
+        qid_to_records[qid].append(vehicle)
+        if qid not in seen_qids:
+            seen_qids.add(qid)
+            unique_qids.append(qid)
+
+    for batch in chunked(unique_qids, 50):
+        params = {
+            "action": "wbgetentities",
+            "format": "json",
+            "props": "claims",
+            "ids": "|".join(batch),
+        }
+        url = "https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode(
+            params, safe="|"
+        )
+        payload = fetch_json(url)
+
+        for qid in batch:
+            entity = payload.get("entities", {}).get(qid, {})
+            claims = entity.get("claims", {})
+            candidate_years: list[tuple[int, str]] = []
+
+            for property_id, label in DATE_CLAIM_PROPERTIES:
+                for claim in claims.get(property_id, []):
+                    year = extract_claim_year(claim)
+                    if year is None:
+                        continue
+                    candidate_years.append((year, label))
+
+            if not candidate_years:
+                continue
+
+            year, source = min(candidate_years, key=lambda item: item[0])
+            for vehicle in qid_to_records[qid]:
+                vehicle["year"] = year
+                vehicle["yearSource"] = source
+
+
+def build_era_records(vehicles: list[dict]) -> list[dict]:
+    counts = defaultdict(int)
+
+    for vehicle in vehicles:
+        era = era_for_year(vehicle.get("year"))
+        vehicle["eraId"] = era["id"]
+        counts[era["id"]] += 1
+
+    return [
+        {
+            "id": bucket["id"],
+            "label": bucket["label"],
+            "description": bucket["description"],
+            "count": counts[bucket["id"]],
+        }
+        for bucket in ERA_BUCKETS
+    ]
 
 
 CATEGORIES = [
@@ -768,6 +921,11 @@ def merge_items(categories: list[dict]) -> dict:
         key=lambda item: (item["groups"][0], item["name"].casefold()),
     )
     fetch_page_images(ordered_vehicles)
+    fetch_vehicle_years(ordered_vehicles)
+    era_records = build_era_records(ordered_vehicles)
+
+    for vehicle in ordered_vehicles:
+        vehicle.pop("wikidataId", None)
 
     category_records = []
     for category in categories:
@@ -801,6 +959,8 @@ def merge_items(categories: list[dict]) -> dict:
         "summary": {
             "vehicleCount": len(ordered_vehicles),
             "categoryCount": len(category_records),
+            "datedVehicleCount": sum(1 for vehicle in ordered_vehicles if vehicle.get("year")),
+            "eraCount": len(era_records),
             "imageCount": sum(1 for vehicle in ordered_vehicles if vehicle.get("image")),
         },
         "licenses": [
@@ -815,6 +975,7 @@ def merge_items(categories: list[dict]) -> dict:
         ],
         "sources": source_records,
         "categories": category_records,
+        "eras": era_records,
         "vehicles": ordered_vehicles,
     }
 

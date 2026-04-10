@@ -247,6 +247,10 @@ button:hover {
   margin-top: 18px;
 }
 
+.era-filters {
+  margin-top: 18px;
+}
+
 .group-card {
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -274,10 +278,21 @@ button:hover {
   font-size: 0.85rem;
 }
 
+.group-note {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
 .checkbox-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
+}
+
+.age-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
 .category-tile {
@@ -311,6 +326,10 @@ button:hover {
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.45;
+}
+
+.tile-count {
+  margin-top: auto;
 }
 
 .category-tile:hover,
@@ -450,9 +469,20 @@ button:hover {
   line-height: 0.96;
 }
 
+.vehicle-age {
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+}
+
+.vehicle-age:empty {
+  display: none;
+}
+
 .vehicle-description {
   max-width: 58ch;
-  margin: 16px 0 0;
+  margin: 12px 0 0;
   color: var(--muted);
   font-size: 1rem;
   line-height: 1.65;
@@ -583,6 +613,10 @@ a:hover {
   }
 
   .checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .age-grid {
     grid-template-columns: 1fr;
   }
 

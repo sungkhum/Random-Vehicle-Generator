@@ -36,20 +36,21 @@
           <div class="panel-head">
             <div>
               <p class="panel-kicker">Filters</p>
-              <h2>Vehicle Categories</h2>
+              <h2>Vehicle Filters</h2>
             </div>
             <p class="panel-note" id="selection-summary"></p>
           </div>
 
           <div class="control-actions">
             <button id="select-all" class="secondary-button" type="button">
-              Select all
+              Select all filters
             </button>
             <button id="clear-all" class="secondary-button" type="button">
-              Clear all
+              Clear all filters
             </button>
           </div>
 
+          <div id="era-filters" class="era-filters"></div>
           <div id="category-groups" class="category-groups"></div>
         </aside>
 
@@ -88,6 +89,7 @@
               </a>
             </div>
             <h3 id="vehicle-name">Ready to roll</h3>
+            <p id="vehicle-age" class="vehicle-age"></p>
             <p id="vehicle-description" class="vehicle-description">
               Your random vehicle will show up here with its matched category
               tags and source trail.

@@ -2,10 +2,12 @@ const data = window.VEHICLE_DATA;
 
 const state = {
   selectedCategories: new Set(data.categories.map((category) => category.id)),
+  selectedEras: new Set(data.eras.map((era) => era.id)),
   currentVehicle: null,
 };
 
 const byId = Object.fromEntries(data.categories.map((category) => [category.id, category]));
+const eraById = Object.fromEntries(data.eras.map((era) => [era.id, era]));
 const groupOrder = ["Air", "Land", "Road", "Rail", "Sea", "Space"];
 const groupToneClass = {
   Air: "air",
@@ -19,8 +21,10 @@ const groupToneClass = {
 const heroStats = document.querySelector("#hero-stats");
 const selectionSummary = document.querySelector("#selection-summary");
 const poolSummary = document.querySelector("#pool-summary");
+const eraFilters = document.querySelector("#era-filters");
 const categoryGroups = document.querySelector("#category-groups");
 const vehicleName = document.querySelector("#vehicle-name");
+const vehicleAge = document.querySelector("#vehicle-age");
 const vehicleDescription = document.querySelector("#vehicle-description");
 const vehicleTags = document.querySelector("#vehicle-tags");
 const vehicleSources = document.querySelector("#vehicle-sources");
@@ -47,7 +51,8 @@ function groupedCategories() {
 
 function filteredVehicles() {
   return data.vehicles.filter((vehicle) =>
-    vehicle.categories.some((categoryId) => state.selectedCategories.has(categoryId)),
+    vehicle.categories.some((categoryId) => state.selectedCategories.has(categoryId)) &&
+    state.selectedEras.has(vehicle.eraId || "unknown-age"),
   );
 }
 
@@ -74,7 +79,8 @@ function renderHeroStats() {
   const stats = [
     `${data.summary.vehicleCount.toLocaleString()} vehicles`,
     `${data.summary.categoryCount} filter categories`,
-    `${(data.summary.imageCount || 0).toLocaleString()} Wikimedia images`,
+    `${data.summary.eraCount} age ranges`,
+    `${(data.summary.datedVehicleCount || 0).toLocaleString()} dated vehicles`,
   ];
 
   stats.forEach((value) => {
@@ -83,6 +89,58 @@ function renderHeroStats() {
     pill.textContent = value;
     heroStats.appendChild(pill);
   });
+}
+
+function renderEraFilters() {
+  eraFilters.innerHTML = "";
+
+  const wrapper = document.createElement("section");
+  wrapper.className = "group-card age-card";
+
+  const heading = document.createElement("div");
+  heading.className = "group-heading";
+  heading.innerHTML = `<h3>Vehicle Age</h3><span>${data.eras.length} ranges</span>`;
+
+  const note = document.createElement("p");
+  note.className = "group-note";
+  note.textContent =
+    "Based on the earliest known intro, first flight, start, or service year when available.";
+
+  const grid = document.createElement("div");
+  grid.className = "checkbox-grid age-grid";
+
+  data.eras.forEach((era) => {
+    const tile = document.createElement("label");
+    tile.className = "category-tile age-tile";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = state.selectedEras.has(era.id);
+    input.addEventListener("change", () => {
+      if (input.checked) {
+        state.selectedEras.add(era.id);
+      } else {
+        state.selectedEras.delete(era.id);
+      }
+      renderStatus();
+    });
+
+    const title = document.createElement("strong");
+    title.textContent = era.label;
+
+    const detail = document.createElement("span");
+    detail.textContent = era.description;
+
+    const count = document.createElement("span");
+    count.className = "tile-count";
+    count.textContent = `${era.count.toLocaleString()} vehicles`;
+
+    tile.append(input, title, detail, count);
+    grid.appendChild(tile);
+  });
+
+  wrapper.append(heading, note, grid);
+  eraFilters.appendChild(wrapper);
 }
 
 function renderCategoryFilters() {
@@ -144,8 +202,9 @@ function renderVehicle(vehicle) {
     vehicleImage.alt = "";
     vehicleImageLink.removeAttribute("href");
     vehicleName.textContent = "No vehicles found";
+    vehicleAge.textContent = "";
     vehicleDescription.textContent =
-      "Your current filter combination is empty. Turn some categories back on and try again.";
+      "Your current category and age filters leave the pool empty. Turn some filters back on and try again.";
     return;
   }
 
@@ -194,6 +253,10 @@ function renderVehicle(vehicle) {
     vehicleImageLink.removeAttribute("href");
   }
   vehicleName.textContent = vehicle.name;
+  const era = eraById[vehicle.eraId || "unknown-age"];
+  vehicleAge.textContent = vehicle.year
+    ? `First known year: ${vehicle.year} · ${era.label}`
+    : "First known year unavailable";
   vehicleDescription.textContent =
     vehicle.description || "Pulled from the active filter pool with open-source vehicle references.";
 
@@ -215,12 +278,13 @@ function renderVehicle(vehicle) {
 
 function renderStatus() {
   const selectedCount = state.selectedCategories.size;
+  const selectedErasCount = state.selectedEras.size;
   const pool = filteredVehicles();
 
   selectionSummary.textContent =
-    selectedCount === data.categories.length
-      ? "All categories active"
-      : `${selectedCount} categories active`;
+    selectedCount === data.categories.length && selectedErasCount === data.eras.length
+      ? "All categories and ages active"
+      : `${selectedCount}/${data.categories.length} categories · ${selectedErasCount}/${data.eras.length} age ranges`;
 
   poolSummary.textContent = `${pool.length.toLocaleString()} vehicles in the current pool`;
   generateButton.disabled = pool.length === 0;
@@ -279,17 +343,22 @@ generateButton.addEventListener("click", generate);
 
 selectAllButton.addEventListener("click", () => {
   data.categories.forEach((category) => state.selectedCategories.add(category.id));
+  data.eras.forEach((era) => state.selectedEras.add(era.id));
+  renderEraFilters();
   renderCategoryFilters();
   renderStatus();
 });
 
 clearAllButton.addEventListener("click", () => {
   state.selectedCategories.clear();
+  state.selectedEras.clear();
+  renderEraFilters();
   renderCategoryFilters();
   renderStatus();
 });
 
 renderHeroStats();
+renderEraFilters();
 renderCategoryFilters();
 renderSources();
 generate();
